@@ -1,7 +1,6 @@
 import cv2 as cv
 import os
 import numpy as np
-import scipy
 from scipy.interpolate import UnivariateSpline
 
 face_cascade = cv.CascadeClassifier(cv.data.haarcascades +'haarcascade_frontalface_default.xml')
@@ -46,20 +45,55 @@ def gallery_image(scale, img_arr):
         vertic = horizontal
     return vertic
 
-#defining a function
 def LookupTable(x, y):
     spline = UnivariateSpline(x, y)
     return spline(range(256))
 
+def Empty(p):
+    pass
+
+cv.namedWindow("Params")
+cv.resizeWindow("Params", 600, 300)
+cv.createTrackbar("Threshold1", "Params", 128, 256, Empty)
+cv.createTrackbar("Threshold2", "Params", 256, 256, Empty)
+cv.createTrackbar("Threshold3", "Params", 160, 256, Empty)
+cv.createTrackbar("Threshold4", "Params", 100, 256, Empty)
+
 # custom effect
-def Summer(img):
-    increaseLookupTable = LookupTable([0, 64, 128, 256], [0, 80, 160, 256])
-    decreaseLookupTable = LookupTable([0, 64, 128, 256], [0, 50, 100, 256])
+def Summer(img, a, b, c, d):
+    increaseLookupTable = LookupTable([0, a / 2, a, b], [0, c / 2, c, b])
+    decreaseLookupTable = LookupTable([0, a / 2, a, b], [0, d / 2, d, b])
     blue_channel, green_channel,red_channel  = cv.split(img)
     red_channel = cv.LUT(red_channel, increaseLookupTable).astype(np.uint8)
     blue_channel = cv.LUT(blue_channel, decreaseLookupTable).astype(np.uint8)
     sum= cv.merge((blue_channel, green_channel, red_channel ))
+    
     return sum
+
+def shape_detector(frame_s):
+    frame_detector_gray = cv.cvtColor(frame_s, cv.COLOR_BGR2GRAY)
+    _, thresh = cv.threshold(frame_detector_gray, 110, 255, cv.THRESH_BINARY)
+    _, contours, _ = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+
+    for contour in contours:
+        approx = cv.approxPolyDP(contour, 0.01 * cv.arcLength(contour, True), True)
+        cv.drawContours(frame_s, [contour], 0, (0, 0, 0), 2)
+        x = approx.ravel()[0]
+        y = approx.ravel()[1] - 5
+
+        if len(approx) == 3:
+            cv.putText(frame_s, 'Triangle', (x, y), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+        elif len(approx) == 4:
+            x, y, w, h = cv.boundingRect(approx)
+            aspect_ratio = float (w) / h
+            if aspect_ratio >= 0.95 and aspect_ratio <= 1.05:
+                cv.putText(frame_s, 'Square', (x, y), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+            else:
+                cv.putText(frame_s, 'Rectangle', (x, y), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+        else:
+            cv.putText(frame_s, 'Circle', (x, y), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+            
+    return frame_s
 
 if video.isOpened():
     while True:
@@ -104,12 +138,24 @@ if video.isOpened():
         img_canny = cv.Canny(gray, 240, 100)   
 
         # apply filter
-        img_filter = Summer(raw)
+        threshold1 = cv.getTrackbarPos("Threshold1", "Params")
+        threshold2 = cv.getTrackbarPos("Threshold2", "Params")
+        threshold3 = cv.getTrackbarPos("Threshold3", "Params")
+        threshold4 = cv.getTrackbarPos("Threshold4", "Params")
+        img_filter = Summer(raw, threshold1, threshold2, threshold3, threshold4)
+        
+        # shape detector
+        img_shape = shape_detector(raw)
+        
+        # TITLESSS
+        cv.putText(frame, "Face Recognition", (10, 50), cv.FONT_HERSHEY_PLAIN, 2, (68, 42, 32), 2)
+        cv.putText(img_canny, "Edge Detection", (10, 50), cv.FONT_HERSHEY_PLAIN, 2, (68, 42, 32), 2)
+        cv.putText(img_filter, "Image Filter", (10, 50), cv.FONT_HERSHEY_PLAIN, 2, (68, 42, 32), 2)
+        cv.putText(img_shape, "Image Shape", (10, 50), cv.FONT_HERSHEY_PLAIN, 2, (68, 42, 32), 2)
         
         # show the frame
-        image_stack = gallery_image(1, [[frame, img_canny], [img_filter, frame]])
-        cv.imshow("Face Recognition", image_stack)
-        
+        image_stack = gallery_image(1, [[frame, img_canny], [img_filter, img_shape]])
+        cv.imshow("Computer Vision", image_stack)
         
         key = cv.waitKey(1)
         

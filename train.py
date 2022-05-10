@@ -33,11 +33,8 @@ for img_path in path:
 
 ids = np.array(ids)
 
-print("[INFO] Created faces and names Numpy Arrays")
-print("[INFO] Initializing the Classifier")
-
 trainer = cv2.face.LBPHFaceRecognizer_create()
 trainer.train(faces, ids)
 trainer.write("training.yml")
 
-print("[INFO] Training Done")
+print("=== Done training ===")

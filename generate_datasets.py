@@ -70,16 +70,6 @@ while True:
     
     # schedule.every(1).seconds.do(takeImage)
   
-    # if flag == 1:
-    #     roi_img = originalImg[coords[1] : coords[1] + coords[3], coords[0] : coords[0] + coords[2]]
-    #     captSaveImage(roi_img, uname, idx, count)
-    #     count += 1
-    #     flag = 0
-  
-    # # If q is pressed break out of the loop
-    # if key == ord('q'):
-    #     break
-    
     # take pict everytime space is pressed
     if key == 32:
         # take until 5 image
