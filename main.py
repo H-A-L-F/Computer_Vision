@@ -63,7 +63,8 @@ def Summer(img):
 
 if video.isOpened():
     while True:
-        ret, frame = video.read()
+        ret, raw = video.read()
+        frame = raw.copy()
         
         # grayscale
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
@@ -97,11 +98,16 @@ if video.isOpened():
                     1,
                     cv.LINE_AA,
                 )
-            
-            img_canny = cv.Canny(gray, 240, 100)
+        
+        # edge detection
+        img_canny = frame.copy()
+        img_canny = cv.Canny(gray, 240, 100)   
+
+        # apply filter
+        img_filter = Summer(raw)
         
         # show the frame
-        image_stack = gallery_image(1, [[frame, img_canny], [Summer(frame), frame]])
+        image_stack = gallery_image(1, [[frame, img_canny], [img_filter, frame]])
         cv.imshow("Face Recognition", image_stack)
         
         
