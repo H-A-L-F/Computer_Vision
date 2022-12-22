@@ -155,7 +155,7 @@ if video.isOpened():
         
         # show the frame
         image_stack = gallery_image(1, [[frame, img_canny], [img_filter, img_shape]])
-        cv.imshow("Computer Vision", image_stack)
+        cv.imshow("Computer Vision", frame)
         
         key = cv.waitKey(1)
         
